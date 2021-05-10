@@ -65,6 +65,7 @@ const Signup = () => {
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
 
+    const router = useRouter();
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const uErr = validateUsername(username);
@@ -73,7 +74,8 @@ const Signup = () => {
         if(!uErr && !pErr && !cErr) {
             try {
                 const res = await AuthSevice.instance().signup(username, password, confirmPassword);
-                console.log("res=", res)
+                console.log("res=", res, "redirecting to /")
+                await router.push("/");
             } catch(err) {
                 console.error(err);
             }
@@ -121,7 +123,6 @@ const Signup = () => {
         validateConfirmPassword(v);
     };
 
-    const router = useRouter();
     const handleLoginToggle = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         await router.push("/login");

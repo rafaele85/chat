@@ -45,22 +45,17 @@ const useStyles = makeStyles(() => {
 export const Sidebar = () => {
 
     const createChat = async () => {
-        const friendEmail = prompt("Please enter email for the user you want to chat with")?.trim();
-        if(!friendEmail) {
-            alert("Email is invalid")
-            return;
-        }
-        if(!EmailValidator.validate(friendEmail)) {
-            alert("Email is invalid")
+        const friend = prompt("Please enter ID of the user you want to chat with")?.trim();
+        if(!friend) {
+            alert("Nothing found")
             return;
         }
         try {
-            await ChatService.instance().createChat(friendEmail);
+            await ChatService.instance().createChat(friend);
         } catch(err) {
             alert(err);
         }
     };
-
 
     const classes = useStyles();
     return (

@@ -2,11 +2,11 @@ import {ISession} from "./session";
 
 export type IChat = {
     id: string;
-    friendEmail: string;
+    friend: string;
 }
 export type ICreateChatData = {
     session: ISession;
-    friendEmail: string;
+    friend: string;
 }
 
 export type IChatListData = {

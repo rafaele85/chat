@@ -1,32 +1,17 @@
 import {EntityManager} from 'typeorm';
-import {User} from "./db/entities/user";
-import {Session} from "./db/entities/session";
+import {createUser, getUserIdByUsername, getUserIdByUsernameAndHashpassword} from "./db/entities/user";
+import {createSession, deleteSessionById, deleteSessionBySession} from "./db/entities/session";
 import {IApiResources} from "../../types/api";
 import {APIController} from "./api";
-import {ILoginData, ISignupData} from "../../types/auth";
+import {ILoginData, ILoginResponse, ILogoutData, ISignupData} from "../../types/auth";
 import {DB} from "./db/db";
-import {uuid} from "../../services/uuid";
-
-export const LoginFailedError = () => {
-    return {error: "login_failed"};
-}
-
-export const PasswordMismatchError = () => {
-    return {confirmPassword: "login_failed"};
-}
-
-export const DuplicateUsernameError = () => {
-    return {username: "duplicate_username"};
-}
-
-export const BadUsernameError = () => {
-    return {username: "bad_username"};
-}
-
-export const BadPasswordError = () => {
-    return {password: "bad_password"};
-}
-
+import {
+    BadPasswordError,
+    BadUsernameError,
+    DuplicateUsernameError,
+    LoginFailedError,
+    PasswordMismatchError, UnauthenticatedError, UnknownError
+} from "../../types/error";
 
 export class AuthController {
     private static readonly _instance = new AuthController();
@@ -34,8 +19,9 @@ export class AuthController {
         return AuthController._instance;
     }
     public static initialize() {
-        APIController.registerPostHandler(IApiResources.LOGIN, AuthController.instance().login);
-        APIController.registerPostHandler(IApiResources.SIGNUP, AuthController.instance().signup);
+        APIController.registerPostHandler(IApiResources.LOGIN,  AuthController._instance.login);
+        APIController.registerPostHandler(IApiResources.LOGOUT,  AuthController._instance.logout);
+        APIController.registerPostHandler(IApiResources.SIGNUP, AuthController._instance.signup);
         console.log("AuthController.initialize - done")
     }
     private constructor() {
@@ -44,29 +30,24 @@ export class AuthController {
 
     public async login(data: ILoginData) {
         const {username, password: hashPassword} = data;
+        let resp: ILoginResponse|undefined=undefined;
         try {
             const conn = await DB.getConnection();
             await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                const u = await transactionalEntityManager.findOne<User>(
-                    User,
-                    {
-                        where: { username, hashpassword: hashPassword },
-                        select: ["id"]
-                    }
-                );
-                if(u===undefined) {
+                const id = await getUserIdByUsernameAndHashpassword(transactionalEntityManager, username, hashPassword);
+                if(id===undefined) {
                     throw LoginFailedError();
                 }
-                await transactionalEntityManager.delete<Session>(Session, {
-                    where: {id: u.id}
-                });
-                const session = new Session();
-                session.id = u.id;
-                const s = await transactionalEntityManager.save<Session>(session);
-                return s.session;
+                await deleteSessionById(transactionalEntityManager, id);
+                const s = await createSession(transactionalEntityManager, id)
+
+                console.log(`login - s.session = ${s.session}, s=`, s)
+                resp = {session: s.session};
             });
+            return resp;
         } catch(err) {
             console.error(err);
+            throw err;
         }
     }
 
@@ -86,32 +67,46 @@ export class AuthController {
             throw BadPasswordError();
         }
 
+        let resp: ILoginResponse|undefined=undefined;
         try {
             const conn = await DB.getConnection();
             await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                let u = await transactionalEntityManager.findOne<User>(
-                    User,
-                    {
-                        where: { username },
-                        select: ["id"]
-                    }
-                );
-                if(u!==undefined) {
+                let id = await getUserIdByUsername(transactionalEntityManager, username);
+
+                if(id!==undefined) {
                     throw DuplicateUsernameError();
                 }
-                const user = new User();
-                user.hashpassword=hashPassword;
-                user.username = username;
-                u = await transactionalEntityManager.save<User>(user);
 
-                const session = new Session();
-                session.user = u;
-                session.session = uuid();
-                const s = await transactionalEntityManager.save<Session>(session);
-                return s.session;
+                id = await createUser(transactionalEntityManager, username, hashPassword);
+                if(!id) {
+                    console.error("signup inserted user id is blank");
+                    throw UnknownError();
+                }
+                const s = await createSession(transactionalEntityManager, id);
+                console.log(`signup - s.session = ${s.session}, s=`, s)
+                resp = {session: s.session};
+            });
+            return resp;
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    public async logout(data: ILogoutData) {
+        const session = data.session;
+        if(!session) {
+            console.error("logout: session is blank")
+            throw UnauthenticatedError();
+        }
+        try {
+            const conn = await DB.getConnection();
+            await conn.transaction(async (transactionalEntityManager: EntityManager) => {
+                await deleteSessionBySession(transactionalEntityManager, session);
             });
         } catch(err) {
             console.error(err);
+            throw err;
         }
     }
 }

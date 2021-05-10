@@ -5,9 +5,11 @@ import cors from "cors";
 import http from "http";
 import {APIController} from "./api";
 import {AuthController} from "./auth";
+import {ChatController} from "./chat";
 
 const initializeControllers = () => {
    AuthController.initialize();
+   ChatController.initialize();
 }
 
 const startApp = () => {

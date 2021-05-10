@@ -13,7 +13,7 @@ export class ChatService extends Service {
         super();
     }
 
-    public async createChat(friendEmail: string) {
+    public async createChat(friend: string) {
         const url = this.getUrl(IApiResources.CREATE_CHAT);
         const session = AuthSevice.instance().getSession();
         if(!session) {
@@ -22,7 +22,7 @@ export class ChatService extends Service {
         }
         const data: ICreateChatData = {
             session,
-            friendEmail
+            friend
         };
         try {
             await this.post<ICreateChatData, undefined>(url, data);

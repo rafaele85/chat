@@ -23,14 +23,16 @@ export class AuthSevice extends Service {
         };
         try {
             const res = await this.post<ILoginData, ILoginResponse>(url, data);
-            console.log("res=",res)
             const session = res.session;
+            console.log("res=",res, "session=", session)
 
             if(!session) {
                 throw UnknownError();
             }
             if(typeof window==="object") {
                 window.localStorage.setItem("auth", session);
+            } else {
+                console.log("window is blank - not setting local storage")
             }
             NotificationService.instance().notify(IEvent.AUTH, session);
             return session;
@@ -49,14 +51,15 @@ export class AuthSevice extends Service {
         };
         try {
             const res = await this.post<ISignupData, ILoginResponse>(url, data);
-            console.log("res=",res)
             const session = res.session;
-
+            console.log("res=",res, "session=", session)
             if(!session) {
                 throw UnknownError();
             }
             if(typeof window==="object") {
                 window.localStorage.setItem("auth", session);
+            } else {
+                console.log("window is blank - not setting local storage")
             }
             NotificationService.instance().notify(IEvent.AUTH, session);
             return session;
@@ -69,6 +72,8 @@ export class AuthSevice extends Service {
     public getSession() {
         if(typeof window==="object") {
             return localStorage.getItem("auth")||"";
+        } else {
+            console.log("window is blank - returning undefined")
         }
     }
 
@@ -95,7 +100,7 @@ export class AuthSevice extends Service {
             localStorage.removeItem("auth");
             console.log("logout.4 - session = ", localStorage.getItem("auth"))
         } else {
-            console.log("logout.4 - window is undefined")
+            console.log("logout.4 - window is undefined - not removing")
         }
         console.log("logout.5")
         NotificationService.instance().notify(IEvent.AUTH);
