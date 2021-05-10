@@ -2,7 +2,9 @@ import {createContext, useCallback, useEffect, useState} from "react";
 import {NotificationService} from "../../services/notification";
 import {IEvent} from "../../types/event";
 
-export function createProvider<TValue>(defaultValue: TValue, fetchFunc: () => Promise<TValue>, updateEvent: IEvent) {
+export function createProvider<TValue>(defaultValue: TValue, fetchFunc: () => Promise<TValue>, updateEvent: IEvent,
+                                       reloadOnEvent?: boolean
+) {
     type ICallback = (v: TValue) => void;
 
     type IContextValue = [TValue, ICallback];
@@ -22,28 +24,32 @@ export function createProvider<TValue>(defaultValue: TValue, fetchFunc: () => Pr
             setValue(v);
         };
 
+        const fetchData = async (mounted: boolean) => {
+            try {
+                const v = await fetchFunc();
+                console.log("provider, fetchFunc returned ", v)
+                if(mounted) {
+                    setValue(v);
+                }
+            } catch(err) {
+                console.error(err);
+            }
+        };
+
         useEffect(() => {
             let mounted = true;
             let listenerId: string|undefined = undefined;
 
-            const fetchData = async () => {
-                try {
-                    const v = await fetchFunc();
-                    console.log("provider, fetchFunc returned ", v)
-                    if(mounted) {
-                        setValue(v);
-                    }
-                } catch(err) {
-                    console.error(err);
-                }
-            };
-
             if(mounted) {
-                void fetchData();
+                void fetchData(mounted);
                 listenerId = NotificationService.instance().subscribe(updateEvent,
                     (payload: TValue) => {
                         if(mounted) {
-                            updateValue(payload);
+                            if(reloadOnEvent) {
+                                void fetchData(mounted);
+                            } else {
+                                updateValue(payload);
+                            }
                         }
                     }
                 );

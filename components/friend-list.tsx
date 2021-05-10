@@ -7,6 +7,7 @@ import {makeStyles} from "@material-ui/core";
 const useStyles = makeStyles(() => {
     return {
         container: {
+            paddingTop: "15px",
             width: "100%",
             height: "100%",
             display: "flex",

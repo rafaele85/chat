@@ -2,6 +2,7 @@ import {ISession} from "./session";
 
 export type IFriend = {
     friend: string;
+    photoURL?: string;
 }
 
 export type IFriendAddData = {

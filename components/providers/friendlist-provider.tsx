@@ -4,7 +4,10 @@ import {ChatService} from "../../services/chat";
 import {IEvent} from "../../types/event";
 import {createProvider} from "./generic-provider";
 
-const p = createProvider<IFriend[]>([], () => ChatService.instance().friendList(), IEvent.FRIENDLIST);
+const p = createProvider<IFriend[]>([], () => ChatService.instance().friendList(),
+    IEvent.FRIENDLIST,
+    true
+);
 
 export const FriendListProvider = p.provider;
 

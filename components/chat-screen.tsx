@@ -11,14 +11,14 @@ const useStyles = makeStyles(() => {
 });
 
 export interface IChatScreenProps {
-    chatId: string;
+    friend: string;
 }
 
 export const ChatScreen = (props: IChatScreenProps) => {
     const classes = useStyles();
     return (
         <div className={classes.container}>
-            chat screen
+            chat with {props.friend}
         </div>
     );
 };

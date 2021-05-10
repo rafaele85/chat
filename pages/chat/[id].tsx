@@ -3,6 +3,9 @@ import Head from "next/head";
 import {ChatScreen} from "../../components/chat-screen";
 import {Layout} from "../../components/layout";
 import {AuthenticatedLayout} from "../../components/authenticated-layout";
+import {useRouter} from "next/router";
+import {useEffect, useState} from "react";
+import {useSelectedFriend} from "../../components/providers/selected-friend-provider";
 
 const useStyles = makeStyles(() => {
     return {
@@ -26,19 +29,28 @@ const useStyles = makeStyles(() => {
 }, {name: "chat-page"});
 
 const Chat = () => {
+    const router = useRouter();
+
+    const [friend, setFriend] = useState<string>("");
+    useEffect(() => {
+        let f = router.query?.id||"";
+        if(Array.isArray(f)) {
+            f = friend[0];
+        }
+        console.log("friend = ", f)
+        setFriend(f);
+
+    }, [router.query]);
+
     const classes = useStyles();
     return (
         <Layout>
-            <div className={classes.container}>
-                <Head>
-                    <title>Chat</title>
-                </Head>
-                <AuthenticatedLayout>
-                    <div className={classes.chatContainer}>
-                        <ChatScreen chatId={"123"}/>
-                    </div>
-                </AuthenticatedLayout>
-            </div>
+            <Head>
+                <title>Chat</title>
+            </Head>
+            <AuthenticatedLayout>
+                <ChatScreen friend={friend}/>
+            </AuthenticatedLayout>
         </Layout>
     );
 };

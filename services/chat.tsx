@@ -1,12 +1,10 @@
 import {Service} from "./service";
 import {IApiResources} from "../types/api";
 import {AuthSevice} from "./auth";
-import {
-    IFriend,
-    IFriendAddData,
-    IFriendAddResponse, IFriendListData, IFriendListResponse
-} from "../types/chat";
+import {IFriendAddData, IFriendAddResponse, IFriendListData, IFriendListResponse} from "../types/chat";
 import {UnknownError} from "../types/error";
+import {NotificationService} from "./notification";
+import {IEvent} from "../types/event";
 
 export class ChatService extends Service {
     private static readonly _instance = new ChatService();
@@ -30,6 +28,7 @@ export class ChatService extends Service {
         };
         try {
             await this.post<IFriendAddData, IFriendAddResponse>(url, data);
+            NotificationService.instance().notify(IEvent.FRIENDLIST);
         } catch(err) {
             console.error(err)
             throw(err);

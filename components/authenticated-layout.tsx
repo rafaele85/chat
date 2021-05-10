@@ -5,6 +5,8 @@ import {AuthSevice} from "../services/auth";
 import SearchIcon from "@material-ui/icons/Search";
 import {ChatService} from "../services/chat";
 import {FriendList} from "./friend-list";
+import {SelectedFriendProvider} from "./providers/selected-friend-provider";
+import {FriendListProvider} from "./providers/friendlist-provider";
 
 
 const useStyles = makeStyles(() => {
@@ -100,8 +102,8 @@ export const AuthenticatedLayout = (props: IAuthenticatedLayoutProps) => {
         }
     };
 
-    const createChat = async () => {
-        const friend = prompt("Please enter ID of the user you want to chat with")?.trim();
+    const friendAdd = async () => {
+        const friend = prompt("Please enter ID of the user you want to add to friends")?.trim();
         if(!friend) {
             alert("User ID is invalid")
             return;
@@ -117,45 +119,49 @@ export const AuthenticatedLayout = (props: IAuthenticatedLayoutProps) => {
 
     const classes = useStyles();
     return (
-        <div className={classes.container}>
-            <div className={classes.top}>
-                <Avatar
-                    src={avatarUrl}
-                    className={classes.avatar}
-                    onClick={handleAvatarClick}
-                />
-                <div className={classes.iconsContainer}>
-                    <IconButton>
-                        <ChatIcon />
-                    </IconButton>
-                    <IconButton>
-                        <MoreVertIcon />
-                    </IconButton>
-                </div>
-            </div>
-
-            <div className={classes.middle}>
-                <div className={classes.left}>
-                    <div className={classes.search}>
-                        <SearchIcon />
-                        <input
-                            placeholder = "Search in chats"
-                            type={"text"}
-                            className={classes.searchInput}
+        <FriendListProvider>
+            <SelectedFriendProvider>
+                <div className={classes.container}>
+                    <div className={classes.top}>
+                        <Avatar
+                            src={avatarUrl}
+                            className={classes.avatar}
+                            onClick={handleAvatarClick}
                         />
+                        <div className={classes.iconsContainer}>
+                            <IconButton>
+                                <ChatIcon />
+                            </IconButton>
+                            <IconButton>
+                                <MoreVertIcon />
+                            </IconButton>
+                        </div>
                     </div>
-                    <button
-                        className={classes.sidebarButton}
-                        onClick={createChat}
-                    >
-                        START A NEW CHAT
-                    </button>
-                    <FriendList />
+
+                    <div className={classes.middle}>
+                        <div className={classes.left}>
+                            <div className={classes.search}>
+                                <SearchIcon />
+                                <input
+                                    placeholder = "Search in chats"
+                                    type={"text"}
+                                    className={classes.searchInput}
+                                />
+                            </div>
+                            <button
+                                className={classes.sidebarButton}
+                                onClick={friendAdd}
+                            >
+                                START A NEW CHAT
+                            </button>
+                            <FriendList />
+                        </div>
+                        <div className={classes.center}>
+                            {props.children}
+                        </div>
+                    </div>
                 </div>
-                <div className={classes.center}>
-                    {props.children}
-                </div>
-            </div>
-        </div>
+            </SelectedFriendProvider>
+        </FriendListProvider>
     );
 };

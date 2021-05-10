@@ -5,6 +5,7 @@ import {useState} from "react";
 import {TextField} from "../components/form/text-field";
 import * as React from "react";
 import {useRouter} from "next/router";
+import {validateUsernameFormat} from "../types/user";
 
 const useStyles = makeStyles(() => {
     return {
@@ -82,10 +83,7 @@ const Signup = () => {
         }
     };
     const validateUsername = (v: string) => {
-        let err="";
-        if(v.length<4) {
-            err = "Username must be at least 4 chars long";
-        }
+        const err = validateUsernameFormat(v);
         setUsernameError(err);
         return err;
     };

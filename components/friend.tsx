@@ -5,6 +5,7 @@ import {IFriend} from "../types/chat";
 const useStyles = makeStyles(() => {
     return {
         container: {
+            width: "100%",
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
@@ -15,6 +16,9 @@ const useStyles = makeStyles(() => {
             "&:hover": {
                 backgroundColor: "#e9eaeb",
             }
+        },
+        selected: {
+           backgroundColor: "#DDDDDD",
         },
         avatar: {
             margin: "5px",
@@ -29,27 +33,33 @@ export interface IFriendProps {
 
 export const Friend = (props: IFriendProps) => {
 
-    let friend="testuser";
-
     const router = useRouter();
     const handleClick = async () => {
         try {
-            await router.push(`/chat/${props.friend}`);
+            await router.push(`/chat/${props.friend.friend}`);
         } catch(err) {
             console.error(err);
         }
     };
 
+    let selectedFriend= router.query.id || "";
+    if(Array.isArray(selectedFriend)) {
+        selectedFriend = selectedFriend[0];
+    }
+    selectedFriend = selectedFriend.trim();
+
     const classes = useStyles();
     let jsxAvatar: JSX.Element;
-    if(friend) {
-        jsxAvatar = <Avatar className={classes.avatar} />;
+    if(props.friend.photoURL) {
+        jsxAvatar = <Avatar className={classes.avatar} src={props.friend.photoURL} />;
     } else {
-        jsxAvatar = <Avatar className={classes.avatar} >{props.friend.friend}</Avatar>;
+        jsxAvatar = <Avatar className={classes.avatar} >{props.friend.friend?.[0]}</Avatar>;
     }
+
+    const cl = (selectedFriend === props.friend.friend ? classes.selected : "");
     return (
         <div
-            className={classes.container}
+            className={`${classes.container} ${cl}`}
             onClick={handleClick}
         >
             {jsxAvatar}
