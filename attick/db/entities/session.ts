@@ -1,7 +1,7 @@
 import {Entity, BaseEntity, Column, PrimaryColumn, OneToOne, JoinColumn, RelationOptions, EntityManager} from "typeorm";
-import {ISession} from "../../../../types/session";
+import {ISession} from "../../../types/session";
 import {User} from "./user";
-import {uuid} from "../../../../services/uuid";
+import {uuid} from "../../../services/uuid";
 
 const relOpts: RelationOptions = {cascade: ["remove"], nullable: false, onDelete: "CASCADE", primary: true, createForeignKeyConstraints: true};
 

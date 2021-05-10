@@ -1,5 +1,5 @@
 import {GenericState, IGenericState} from './generic';
-import {ISession} from "../types/session";
+import {ISession} from "../../types/session";
 import {Dispatch} from "react";
 
 export type ISessionState = IGenericState<ISession|undefined>;

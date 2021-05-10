@@ -1,7 +1,11 @@
 import {Service} from "./service";
 import {IApiResources} from "../types/api";
 import {AuthSevice} from "./auth";
-import {IChat, IChatListData, ICreateChatData} from "../types/chat";
+import {
+    IFriend,
+    IFriendAddData,
+    IFriendAddResponse, IFriendListData, IFriendListResponse
+} from "../types/chat";
 import {UnknownError} from "../types/error";
 
 export class ChatService extends Service {
@@ -13,37 +17,40 @@ export class ChatService extends Service {
         super();
     }
 
-    public async createChat(friend: string) {
-        const url = this.getUrl(IApiResources.CREATE_CHAT);
+    public async friendAdd(friend: string) {
+        const url = this.getUrl(IApiResources.FRIEND_ADD);
         const session = AuthSevice.instance().getSession();
         if(!session) {
             console.error("session is blank");
             throw UnknownError();
         }
-        const data: ICreateChatData = {
+        const data: IFriendAddData = {
             session,
             friend
         };
         try {
-            await this.post<ICreateChatData, undefined>(url, data);
+            await this.post<IFriendAddData, IFriendAddResponse>(url, data);
         } catch(err) {
             console.error(err)
             throw(err);
         }
     }
 
-    public async chatList() {
-        const url = this.getUrl(IApiResources.CHAT_LIST);
+    public async friendList() {
+        const url = this.getUrl(IApiResources.FRIEND_LIST);
         const session = AuthSevice.instance().getSession();
         if(!session) {
             console.error("session is blank");
             throw UnknownError();
         }
-        const data: IChatListData = {
+        const data: IFriendListData = {
             session,
         };
         try {
-            return await this.get<IChatListData, IChat[]>(url, data);
+            const res = await this.get<IFriendListData, IFriendListResponse>(url, data);
+            const friendList = res?.friendList;
+            console.log("friendList: ", friendList )
+            return friendList;
         } catch(err) {
             console.error(err)
             throw(err);

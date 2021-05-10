@@ -1,6 +1,6 @@
-import {IChat} from "../types/chat";
 import {Avatar, makeStyles} from "@material-ui/core";
 import {useRouter} from "next/router";
+import {IFriend} from "../types/chat";
 
 const useStyles = makeStyles(() => {
     return {
@@ -23,18 +23,18 @@ const useStyles = makeStyles(() => {
     }
 });
 
-export interface IChatProps {
-    chat: IChat;
+export interface IFriendProps {
+    friend: IFriend;
 }
 
-export const Chat = (props: IChatProps) => {
+export const Friend = (props: IFriendProps) => {
 
     let friend="testuser";
 
     const router = useRouter();
     const handleClick = async () => {
         try {
-            await router.push(`/chat/${props.chat.id}`);
+            await router.push(`/chat/${props.friend}`);
         } catch(err) {
             console.error(err);
         }
@@ -45,7 +45,7 @@ export const Chat = (props: IChatProps) => {
     if(friend) {
         jsxAvatar = <Avatar className={classes.avatar} />;
     } else {
-        jsxAvatar = <Avatar className={classes.avatar} >{props.chat.friendEmail}</Avatar>;
+        jsxAvatar = <Avatar className={classes.avatar} >{props.friend.friend}</Avatar>;
     }
     return (
         <div
@@ -53,7 +53,7 @@ export const Chat = (props: IChatProps) => {
             onClick={handleClick}
         >
             {jsxAvatar}
-            {props.chat.friendEmail}
+            {props.friend.friend}
         </div>
     );
 }

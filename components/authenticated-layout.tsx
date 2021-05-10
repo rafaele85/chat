@@ -3,9 +3,9 @@ import ChatIcon from "@material-ui/icons/Chat";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import {AuthSevice} from "../services/auth";
 import SearchIcon from "@material-ui/icons/Search";
-import {ChatList} from "./chat-list";
-import * as EmailValidator from "email-validator";
 import {ChatService} from "../services/chat";
+import {FriendList} from "./friend-list";
+
 
 const useStyles = makeStyles(() => {
     return {
@@ -101,17 +101,13 @@ export const AuthenticatedLayout = (props: IAuthenticatedLayoutProps) => {
     };
 
     const createChat = async () => {
-        const friendEmail = prompt("Please enter email for the user you want to chat with")?.trim();
-        if(!friendEmail) {
-            alert("Email is invalid")
-            return;
-        }
-        if(!EmailValidator.validate(friendEmail)) {
-            alert("Email is invalid")
+        const friend = prompt("Please enter ID of the user you want to chat with")?.trim();
+        if(!friend) {
+            alert("User ID is invalid")
             return;
         }
         try {
-            await ChatService.instance().createChat(friendEmail);
+            await ChatService.instance().friendAdd(friend);
         } catch(err) {
             alert(err);
         }
@@ -154,7 +150,7 @@ export const AuthenticatedLayout = (props: IAuthenticatedLayoutProps) => {
                     >
                         START A NEW CHAT
                     </button>
-                    <ChatList />
+                    <FriendList />
                 </div>
                 <div className={classes.center}>
                     {props.children}

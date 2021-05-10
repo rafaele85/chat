@@ -1,12 +1,16 @@
 import {APIController} from "./api";
 import {IApiResources} from "../../types/api";
-import {ICreateChatData} from "../../types/chat";
-import {ChatExistsError, ChatWithSelfError, UnauthenticatedError, UnknownFriendError} from "../../types/error";
-import {DB} from "./db/db";
-import {EntityManager} from "typeorm";
-import {getSessionIdBySession} from "./db/entities/session";
-import {getUserIdByUsername} from "./db/entities/user";
-import {getChatIdByUserIdAndFriendId, createChat} from "./db/entities/chat";
+import {
+    UnauthenticatedError,
+    UnknownError, UnknownFriendError,
+} from "../../types/error";
+import {IFriend, IFriendAddData, IFriendAddResponse, IFriendListData, IFriendListResponse} from "../../types/chat";
+import {PostgreSQLConnection} from "./db";
+
+enum PSQLQuery {
+    FRIENDADD = "select * from FriendAdd($1, $2) res", //session, friend user name
+    FRIENDLIST = "select * from FriendList($1) res", //session
+}
 
 export class ChatController {
     private static readonly _instance = new ChatController();
@@ -16,51 +20,61 @@ export class ChatController {
     }
 
     public static initialize() {
-        APIController.registerPostHandler(IApiResources.CREATE_CHAT, ChatController._instance.createChat);
+        APIController.registerPostHandler(IApiResources.FRIEND_ADD, ChatController._instance.friendAdd);
+        APIController.registerGetHandler(IApiResources.FRIEND_LIST, ChatController._instance.friendList);
         console.log("ChatController.initialize - done")
     }
 
     private constructor() {
     }
 
-    public async createChat(payload: ICreateChatData) {
+    public async friendAdd(payload: IFriendAddData) {
         let {session, friend} = payload;
         session = session?.trim();
         friend = friend?.trim();
         if(!session) {
+            console.error("session is blank")
             throw UnauthenticatedError();
         }
         if(!friend) {
+            console.error("friend is blank")
             throw UnknownFriendError();
         }
+        let friendshipId: number;
         try {
-            const conn = await DB.getConnection();
-            await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                const userId = await getSessionIdBySession(transactionalEntityManager, session);
-                if(!userId) {
-                    throw UnauthenticatedError();
-                }
-                const friendId = await getUserIdByUsername(transactionalEntityManager, friend);
-                if(!friendId) {
-                    throw UnknownFriendError();
-                }
-                if(friendId===userId) {
-                    throw ChatWithSelfError();
-                }
-                let chatId = await getChatIdByUserIdAndFriendId(transactionalEntityManager, userId, friendId)
-                if(chatId) {
-                    throw ChatExistsError();
-                }
-                chatId = await getChatIdByUserIdAndFriendId(transactionalEntityManager, friendId, userId)
-                if(chatId) {
-                    throw ChatExistsError();
-                }
-                await createChat(transactionalEntityManager, userId, friendId);
-                return;
-            });
+            friendshipId = await PostgreSQLConnection.executeInTransaction<number>(PSQLQuery.FRIENDADD, [session, friend], "id");
         } catch(err) {
             console.error(err);
             throw err;
         }
+        if(!friendshipId) {
+            console.error("friendAdd friendshipId is blank");
+            throw UnknownError();
+        }
+        const resp: IFriendAddResponse = {id: friendshipId};
+        return resp;
+    }
+
+    public async friendList(payload: IFriendListData) {
+        console.log("friendList payload=", payload)
+        let {session} = payload;
+        session = session?.trim();
+        if(!session) {
+            console.error("session is blank")
+            throw UnauthenticatedError();
+        }
+        let friendList: IFriend[];
+        try {
+            friendList = await PostgreSQLConnection.execute(
+                PSQLQuery.FRIENDLIST,
+                [session],
+                "friendList"
+            );
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+        const resp: IFriendListResponse = {friendList};
+        return resp;
     }
 }

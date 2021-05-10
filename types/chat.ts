@@ -1,14 +1,22 @@
 import {ISession} from "./session";
 
-export type IChat = {
-    id: string;
+export type IFriend = {
     friend: string;
 }
-export type ICreateChatData = {
+
+export type IFriendAddData = {
     session: ISession;
     friend: string;
 }
 
-export type IChatListData = {
+export type IFriendListData = {
     session: ISession;
+}
+
+export type IFriendAddResponse = {
+    id: number;
+}
+
+export type IFriendListResponse = {
+    friendList: IFriend[];
 }

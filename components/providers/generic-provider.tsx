@@ -29,6 +29,7 @@ export function createProvider<TValue>(defaultValue: TValue, fetchFunc: () => Pr
             const fetchData = async () => {
                 try {
                     const v = await fetchFunc();
+                    console.log("provider, fetchFunc returned ", v)
                     if(mounted) {
                         setValue(v);
                     }

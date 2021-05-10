@@ -3,7 +3,7 @@ import Login from "../pages/login";
 import {createMuiTheme, CssBaseline, MuiThemeProvider} from "@material-ui/core";
 import Head from "next/head";
 import {GlobalStyles} from "./global-styles";
-import {ChatListProvider} from "./providers/chatlist-provider";
+import {FriendListProvider} from "./providers/friendlist-provider";
 
 export interface ILayoutProps {
     children: any;
@@ -15,9 +15,9 @@ export const Layout = (props: ILayoutProps) => {
     let jsx;
     if(session) {
         jsx = (
-            <ChatListProvider>
+            <FriendListProvider>
                 {props.children}
-            </ChatListProvider>
+            </FriendListProvider>
         );
     } else {
         jsx = <Login />;

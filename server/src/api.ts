@@ -14,9 +14,9 @@ export class APIController {
         this.getHandlers.set(resource, handler);
     }
 
-    public static async handleRequest(key: string, handler: IRequestHandler, req: Request, res: Response, _next: NextFunction) {
+    public static async handleRequest(key: string, handler: IRequestHandler, payload: any, req: Request, res: Response, _next: NextFunction) {
         console.log(`key=${key} handleRequest body=`, req.body)
-        const p = handler(req.body||{});
+        const p = handler(payload||{});
         console.log(`APIController ${key} promise=`,p)
         try {
             const resp = await p;
@@ -34,13 +34,13 @@ export class APIController {
 
         this.postHandlers.forEach((handler: IRequestHandler, key: IApiResources) => {
             router.post(key, async (req: Request, res: Response, next: NextFunction) => {
-                await this.handleRequest(key, handler, req, res, next);
+                await this.handleRequest(key, handler, req.body, req, res, next);
             });
         });
 
         this.getHandlers.forEach((handler: IRequestHandler, key: IApiResources) => {
             router.get(key, async (req: Request, res: Response, next: NextFunction) => {
-                await this.handleRequest(key, handler, req, res, next);
+                await this.handleRequest(key, handler, req.query, req, res, next);
             });
         });
 

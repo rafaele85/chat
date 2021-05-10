@@ -25,8 +25,6 @@ const useStyles = makeStyles(() => {
     }
 }, {name: "chat-page"});
 
-export interface IChatProps {
-}
 const Chat = () => {
     const classes = useStyles();
     return (

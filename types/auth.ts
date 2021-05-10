@@ -23,4 +23,5 @@ export type ISignupData = {
     username: string;
     password: string;
     confirmPassword: string;
+    photoURL?: string;
 };

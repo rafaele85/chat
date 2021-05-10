@@ -1,17 +1,22 @@
-import {EntityManager} from 'typeorm';
-import {createUser, getUserIdByUsername, getUserIdByUsernameAndHashpassword} from "./db/entities/user";
-import {createSession, deleteSessionById, deleteSessionBySession} from "./db/entities/session";
 import {IApiResources} from "../../types/api";
 import {APIController} from "./api";
 import {ILoginData, ILoginResponse, ILogoutData, ISignupData} from "../../types/auth";
-import {DB} from "./db/db";
 import {
     BadPasswordError,
     BadUsernameError,
-    DuplicateUsernameError,
-    LoginFailedError,
     PasswordMismatchError, UnauthenticatedError, UnknownError
 } from "../../types/error";
+import {PostgreSQLConnection} from "./db";
+import {ISession} from "../../types/session";
+
+
+
+enum PSQLQuery {
+    LOGIN = "select * from UserLogin($1, $2) res", //username, hashpassword
+    SIGNUP = "select * from UserSignup($1, $2, $3, $4) res", //username, hashpassword, hashConfirmPassword, photoURL
+    LOGOUT = "select * from UserLogout($1) res", //session
+}
+
 
 export class AuthController {
     private static readonly _instance = new AuthController();
@@ -28,69 +33,71 @@ export class AuthController {
     }
 
 
-    public async login(data: ILoginData) {
-        const {username, password: hashPassword} = data;
-        let resp: ILoginResponse|undefined=undefined;
-        try {
-            const conn = await DB.getConnection();
-            await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                const id = await getUserIdByUsernameAndHashpassword(transactionalEntityManager, username, hashPassword);
-                if(id===undefined) {
-                    throw LoginFailedError();
-                }
-                await deleteSessionById(transactionalEntityManager, id);
-                const s = await createSession(transactionalEntityManager, id)
+    public async login(payload: ILoginData) {
+        console.log("AuthController.login")
+        const username = payload?.username?.trim();
+        const hashPassword = payload?.password?.trim();
 
-                console.log(`login - s.session = ${s.session}, s=`, s)
-                resp = {session: s.session};
-            });
-            return resp;
+        if(!username || username.length<4 || username.length>10) {
+            throw BadUsernameError();
+        }
+        if(!hashPassword) {
+            throw BadPasswordError();
+        }
+
+        let session: ISession;
+        try {
+            session = await PostgreSQLConnection.executeInTransaction<ISession>(PSQLQuery.LOGIN,
+                [username, hashPassword], "session"
+            );
         } catch(err) {
             console.error(err);
-            throw err;
+            throw UnknownError();
         }
+        if(!session) {
+            throw UnknownError();
+        }
+        const resp: ILoginResponse = {session};
+        return resp;
     }
 
 
-
     public async signup(data: ISignupData) {
-        let {username, password: hashPassword, confirmPassword: hashConfirmPassword} = data;
+        console.log("AuthController.signup")
+        let {username, password: hashPassword, confirmPassword: hashConfirmPassword, photoURL} = data;
         if(hashPassword !== hashConfirmPassword) {
+            console.error("password mismatch")
             throw PasswordMismatchError();
         }
         username = username.trim();
         if(!username || username.length<4 || username.length>8) {
+            console.error("bad username")
             throw BadUsernameError();
         }
         hashPassword = hashPassword.trim();
         if(!hashPassword || hashPassword.length<8) {
+            console.error("bad password")
             throw BadPasswordError();
         }
 
-        let resp: ILoginResponse|undefined=undefined;
+        let session: ISession;
+
         try {
-            const conn = await DB.getConnection();
-            await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                let id = await getUserIdByUsername(transactionalEntityManager, username);
-
-                if(id!==undefined) {
-                    throw DuplicateUsernameError();
-                }
-
-                id = await createUser(transactionalEntityManager, username, hashPassword);
-                if(!id) {
-                    console.error("signup inserted user id is blank");
-                    throw UnknownError();
-                }
-                const s = await createSession(transactionalEntityManager, id);
-                console.log(`signup - s.session = ${s.session}, s=`, s)
-                resp = {session: s.session};
-            });
-            return resp;
+            console.log("starting tx")
+            session = await PostgreSQLConnection.executeInTransaction<ISession>(
+                PSQLQuery.SIGNUP,
+                [username, hashPassword, hashConfirmPassword, photoURL],
+                "session"
+            );
         } catch(err) {
             console.error(err);
             throw err;
         }
+        if(!session) {
+            throw UnknownError();
+        }
+        const resp: ILoginResponse = {session};
+        return resp;
     }
 
     public async logout(data: ILogoutData) {
@@ -100,10 +107,7 @@ export class AuthController {
             throw UnauthenticatedError();
         }
         try {
-            const conn = await DB.getConnection();
-            await conn.transaction(async (transactionalEntityManager: EntityManager) => {
-                await deleteSessionBySession(transactionalEntityManager, session);
-            });
+            await PostgreSQLConnection.executeInTransaction(PSQLQuery.LOGOUT, [session]);
         } catch(err) {
             console.error(err);
             throw err;

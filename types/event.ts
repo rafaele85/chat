@@ -1,6 +1,6 @@
 export enum IEvent {
     AUTH="auth",
-    CHATLIST="chatlist",
+    FRIENDLIST="friendlist",
 }
 
 export type IListenerId = string;
